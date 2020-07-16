@@ -1,4 +1,3 @@
 PyYAML==5.3.1
 TwitterSearch==1.0.2
 vaderSentiment-swedish
-
