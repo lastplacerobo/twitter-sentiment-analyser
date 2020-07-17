@@ -2,9 +2,12 @@
 
 import yaml
 import TwitterSearch
+import preprocessor
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
-def tweetsearch(keywords, tweet_lang):
+
+# Search tweets based on keyword and language
+def tweet_search(keywords, tweet_lang):
     # load yaml file with secrets to dictionary
     credentials = yaml.safe_load(open("./credentials.yml"))
 
@@ -32,43 +35,70 @@ def tweetsearch(keywords, tweet_lang):
         print(e)
 
 
-# All entities in the list must exist in the tweet, so only use one at a time
-keyword = ["EVO"]
-tweet_lang = "sv"
+# Clean tweets from links and mentions
+def tweet_sanitizer(tweets):
+    clean_tweets = []
+    for tweet in tweets:
+        preprocessor.set_options(preprocessor.OPT.MENTION, preprocessor.OPT.URL)
+        clean_tweets.append(preprocessor.clean(tweet))
 
-# Run tweetsearch and save them in a list
-tweets = tweetsearch(keyword, tweet_lang)
+    return clean_tweets
 
-# run a sentiment analysis on each tweet, save each tweets compound score in list sentiment.
+
+# Run a sentiment analysis on each tweet, save each tweets compound score in list sentiment.
 # the compound score shows the sentiment of the tweet
-sentiment = []
-analyzer = SentimentIntensityAnalyzer()
-for tweet in tweets:
-    vs = analyzer.polarity_scores(tweet)
-    sentiment.append(vs["compound"])
+def sentiment_analyser(tweets):
+    sentiment = []
+    analyzer = SentimentIntensityAnalyzer()
+    for tweet in tweets:
+        vs = analyzer.polarity_scores(tweet)
+        sentiment.append(vs["compound"])
 
-# positive: compound score >= 0.05
-# neutral: (compound score > -0.05) and (compound score < 0.05)
-# negative: compound score <= -0.05
-# -1 (most extreme negative) and +1 (most extreme positive)
+    return sentiment
 
-# Test the sentiment
-positive = 0
-negative = 0
-neutral = 0
-for sent in sentiment:
 
-    if sent >= 0.05:
-        positive += 1
+def test_sentiment(sentiment, tweets, keyword):
+    # positive: compound score >= 0.05
+    # neutral: (compound score > -0.05) and (compound score < 0.05)
+    # negative: compound score <= -0.05
+    # -1 (most extreme negative) and +1 (most extreme positive)
 
-    elif sent <= -0.05:
-        negative += 1
+    # Test the sentiment
+    positive = 0
+    negative = 0
+    neutral = 0
+    for sent in sentiment:
 
-    else:
-        neutral += 1
+        if sent >= 0.05:
+            positive += 1
 
-print(keyword, "Total Tweets:", len(tweets), "\n")
-print("Positive Tweets:", positive)
-print("Negative Tweets:", negative)
-print("Neutral Tweets:", neutral)
+        elif sent <= -0.05:
+            negative += 1
 
+        else:
+            neutral += 1
+
+    print(keyword, "Total Tweets:", len(tweets), "\n")
+    print("Positive Tweets:", positive)
+    print("Negative Tweets:", negative)
+    print("Neutral Tweets:", neutral)
+
+
+def main():
+    # all entities in the list must exist in the tweet, so only use one at a time
+    keyword = ["EVO"]
+    tweet_lang = "sv"
+
+    # Run tweet_search and save them in a list
+    tweets = tweet_search(keyword, tweet_lang)
+
+    # Run sentiment analysis
+    sentiment = sentiment_analyser(tweet_sanitizer(tweets))
+
+    # Check the sentiment result
+    test_sentiment(sentiment, tweets, keyword)
+
+
+# Only run main if executed directly
+if __name__ == "__main__":
+    main()
