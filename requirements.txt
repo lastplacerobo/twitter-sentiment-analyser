@@ -1,4 +1,5 @@
-PyYAML==5.3.1
+matplotlib
+tweet-preprocessor==0.6.0
 TwitterSearch==1.0.2
-vaderSentiment-swedish
-tweet-preprocessor
+vaderSentiment-swedish==1.0.3
+PyYAML
