@@ -1,9 +1,20 @@
 #!/usr/bin/env python3
 
+import sys
+import os
+sys.path.append(os.path.expanduser("~/PycharmProjects/twitter-sentiment-analyser/venv/lib/python3.8/site-packages"))
 import yaml
 import TwitterSearch
 import preprocessor
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+from collections import OrderedDict
+import datetime
+import locale
+
+# Set LC_TIME for datetime
+locale.setlocale(locale.LC_TIME, "en_US.UTF-8")
 
 
 # Search tweets based on keyword and language
@@ -25,78 +36,100 @@ def tweet_search(keywords, tweet_lang):
             access_token_secret=credentials['database']['access_token_secret']
         )
 
-        # Save all tweets in a list and return it
-        all_tweets = []
+        # Save all tweets in a nested dic
+        # twitty{"id"}
+        #          |- {date} -> tweet creation date
+        #          |- {text} -> tweet text
+        twitty = {}
         for tweet in ts.search_tweets_iterable(tso):
-            all_tweets.append(tweet['text'])
-        return all_tweets
+            # Dict based on tweet ID, assign a new dict as value
+            twitty[tweet["id"]] = {}
+            # Key is date and value "created at"
+            twitty[tweet["id"]]["date"] = tweet["created_at"]
+            # Key is text and value is the tweet
+            twitty[tweet["id"]]["text"] = tweet["text"]
 
-    except TwitterSearch.TwitterSearchException as e:  # take care of all those ugly errors if there are some
+        return twitty
+
+    except TwitterSearch.TwitterSearchException as e:
         print(e)
 
 
 # Clean tweets from links and mentions
 def tweet_sanitizer(tweets):
-    clean_tweets = []
-    for tweet in tweets:
+    for key, value in tweets.items():
         preprocessor.set_options(preprocessor.OPT.MENTION, preprocessor.OPT.URL)
-        clean_tweets.append(preprocessor.clean(tweet))
+        # Clean each tweet from mentions and URLs
+        value["text"] = preprocessor.clean(value["text"])
 
-    return clean_tweets
+    return tweets
 
 
 # Run a sentiment analysis on each tweet, save each tweets compound score in list sentiment.
 # the compound score shows the sentiment of the tweet
 def sentiment_analyser(tweets):
-    sentiment = []
     analyzer = SentimentIntensityAnalyzer()
-    for tweet in tweets:
-        vs = analyzer.polarity_scores(tweet)
-        sentiment.append(vs["compound"])
+    for key, value in tweets.items():
+        vs = analyzer.polarity_scores(value["text"])
+        # create a new nested key with the compound value for each tweet
+        value["score"] = vs["compound"]
 
-    return sentiment
+    return tweets
 
 
-def test_sentiment(sentiment, tweets, keyword):
+def plot_sentiment(sentiment, keyword):
+
+    # Make a datetime object of each date entry
+    for key, value in sentiment.items():
+        value["date"] = datetime.datetime.strptime((value["date"]), '%a %b %d %H:%M:%S %z %Y')
+
+    # Order the dic after date
+    ordered = OrderedDict(sorted(sentiment.items(), key=lambda i: i[1]['date']))
+
+    fig = plt.figure(figsize=(15, 5))
+    ax = fig.add_subplot(111)
+    # Rotate xticks
+    fig.autofmt_xdate()
+
     # positive: compound score >= 0.05
     # neutral: (compound score > -0.05) and (compound score < 0.05)
     # negative: compound score <= -0.05
     # -1 (most extreme negative) and +1 (most extreme positive)
+    for key, value in ordered.items():
 
-    # Test the sentiment
-    positive = 0
-    negative = 0
-    neutral = 0
-    for sent in sentiment:
+        if value["score"] >= 0.05:
+            ax.scatter(value["date"], value["score"], color="darkgreen")
 
-        if sent >= 0.05:
-            positive += 1
-
-        elif sent <= -0.05:
-            negative += 1
+        elif value["score"] <= -0.05:
+            ax.scatter(value["date"], value["score"], color="darkred")
 
         else:
-            neutral += 1
+            ax.scatter(value["date"], value["score"], color="aqua")
 
-    print(keyword, "Total Tweets:", len(tweets), "\n")
-    print("Positive Tweets:", positive)
-    print("Negative Tweets:", negative)
-    print("Neutral Tweets:", neutral)
+    darkgreen = mpatches.Patch(color='darkgreen', label='Positive')
+    aqua = mpatches.Patch(color='aqua', label='Neutral')
+    darkred = mpatches.Patch(color='darkred', label='Negative')
+
+    ax.legend(loc="best", handles=[darkgreen, aqua, darkred])
+    ax.set(title='Twitter Sentiment for: ' + str(keyword), xlabel='Date', ylabel='Sentiment')
+
+    fig.tight_layout()
+    plt.show()
 
 
 def main():
     # all entities in the list must exist in the tweet, so only use one at a time
-    keyword = ["EVO"]
+    keyword = ["evo"]
     tweet_lang = "sv"
 
-    # Run tweet_search and save them in a list
+    # Run tweet_search
     tweets = tweet_search(keyword, tweet_lang)
 
     # Run sentiment analysis
     sentiment = sentiment_analyser(tweet_sanitizer(tweets))
 
-    # Check the sentiment result
-    test_sentiment(sentiment, tweets, keyword)
+    # Plot the sentiment
+    plot_sentiment(sentiment, keyword)
 
 
 # Only run main if executed directly
