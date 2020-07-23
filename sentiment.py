@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
 
-import sys
-import os
-
-sys.path.append(os.path.expanduser("~/PycharmProjects/twitter-sentiment-analyser/venv/lib/python3.8/site-packages"))
 import yaml
 import TwitterSearch
 import preprocessor
