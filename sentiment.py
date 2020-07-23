@@ -2,6 +2,7 @@
 
 import sys
 import os
+
 sys.path.append(os.path.expanduser("~/PycharmProjects/twitter-sentiment-analyser/venv/lib/python3.8/site-packages"))
 import yaml
 import TwitterSearch
@@ -78,7 +79,6 @@ def sentiment_analyser(tweets):
 
 
 def plot_sentiment(sentiment, keyword):
-
     # Make a datetime object of each date entry
     for key, value in sentiment.items():
         value["date"] = datetime.datetime.strptime((value["date"]), '%a %b %d %H:%M:%S %z %Y')
@@ -119,7 +119,7 @@ def plot_sentiment(sentiment, keyword):
 
 def main():
     # all entities in the list must exist in the tweet, so only use one at a time
-    keyword = ["evo"]
+    keyword = ["semester"]
     tweet_lang = "sv"
 
     # Run tweet_search
