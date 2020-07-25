@@ -1,6 +1,6 @@
 # twitter-sentiment-analyser
 
-Search Twitter for keywords and analyses their sentiment (Swedish)
+Search Twitter for tweets based on keywords. Analyses their sentiment (lang: Swedish)
 
 Uses TwitterSearch, and vaderSentiment-swedish
 
