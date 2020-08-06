@@ -1,10 +1,9 @@
 # twitter-sentiment-analyser
 
-Search Twitter for tweets based on keywords. Analyses their sentiment (lang: Swedish)
+Search for tweets based on keywords. Analyse the tweets sentiment (lang: Swedish).
 
-Uses TwitterSearch, and vaderSentiment-swedish
+Uses TwitterSearch, and vaderSentiment-swedish.
 
-Keeps the credentials in yaml file
 
 
 ![Screenshot](twitter-sentiment.png)
